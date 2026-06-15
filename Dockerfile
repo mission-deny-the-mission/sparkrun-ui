@@ -61,7 +61,11 @@ RUN ln -sf /usr/local/bin/python3.12 /usr/bin/python3.12 \
 ARG APP_UID=1000
 ARG APP_GID=1000
 RUN groupadd --system --gid ${APP_GID} app \
-  && useradd --system --uid ${APP_UID} --gid app --create-home --home-dir /home/app --shell /bin/bash app
+  && useradd --system --uid ${APP_UID} --gid app --create-home --home-dir /home/app --shell /bin/bash app \
+  # Pre-create ~/.cache owned by app so the docker-compose bind mount of
+  # ~/.cache/sparkrun doesn't leave the parent dir owned by root, which
+  # would block uv from creating its own ~/.cache/uv directory.
+  && install -d -o app -g app /home/app/.cache
 
 # Start as root so the entrypoint can sync the docker-socket group, then drop
 # to `app` via gosu. The app process itself never runs as root.
