@@ -74,6 +74,7 @@ version you have on the host — no drift, no extra version to keep updated.
 docker run -d --name sparkrun-ui \
   --restart unless-stopped \
   --network host \
+  -e HOST_USER=$USER \
   -e PATH="/usr/bin/sparkrun:/home/$USER/.local/share/uv/tools/sparkrun/bin:$PATH" \
   -v /var/run/docker.sock:/var/run/docker.sock \
   -v $HOME/.local/bin/sparkrun:/usr/bin/sparkrun:ro \
@@ -85,8 +86,11 @@ docker run -d --name sparkrun-ui \
 ```
 
 Open <http://localhost:5678>. `--network host` is required when your cluster
-references `127.0.0.1`. See [mount reference](CONTRIBUTING.md#docker-volume-mounts)
-for what each volume does.
+references `127.0.0.1`. `HOST_USER` tells sparkrun which user to SSH as when
+it monitors the cluster — without it, monitoring SSHs in as the in-container
+`app` user and every metric comes back empty. See
+[mount reference](CONTRIBUTING.md#docker-volume-mounts) for what each volume
+does.
 
 ### Multi-host / remote cluster
 
@@ -97,6 +101,7 @@ If your cluster uses LAN IPs (e.g. `192.168.0.40, 192.168.0.41`), drop
 docker run -d --name sparkrun-ui \
   --restart unless-stopped \
   -p 5678:5678 \
+  -e HOST_USER=$USER \
   -e PATH="/usr/bin/sparkrun:/home/$USER/.local/share/uv/tools/sparkrun/bin:$PATH" \
   -v /var/run/docker.sock:/var/run/docker.sock \
   -v $HOME/.local/bin/sparkrun:/usr/bin/sparkrun:ro \

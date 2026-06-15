@@ -23,11 +23,18 @@ fi
 # for cluster monitoring (even for 127.0.0.1), so the container's default
 # OS user (app) won't authenticate against the host unless we configure
 # the real host user in sparkrun's config.
+#
+# The config file is bind-mounted from the host, so it often already
+# exists (e.g. from `sparkrun cluster create`) but doesn't have an
+# `ssh:` block — the host's OS user works for SSH there, so sparkrun
+# never needed one configured. We append the block when missing instead
+# of only writing on a fresh install; otherwise the in-container `app`
+# user gets used for SSH and every metric comes back empty.
 if [ -n "${HOST_USER}" ] && [ "${HOST_USER}" != "app" ]; then
   SPARKRUN_CONFIG="$HOME/.config/sparkrun/config.yaml"
-  if [ ! -f "$SPARKRUN_CONFIG" ]; then
-    mkdir -p "$(dirname "$SPARKRUN_CONFIG")"
-    printf 'ssh:\n  user: %s\n' "$HOST_USER" > "$SPARKRUN_CONFIG"
+  mkdir -p "$(dirname "$SPARKRUN_CONFIG")"
+  if ! grep -qE '^ssh:[[:space:]]*$' "$SPARKRUN_CONFIG" 2>/dev/null; then
+    printf '\nssh:\n  user: %s\n' "$HOST_USER" >> "$SPARKRUN_CONFIG"
   fi
 fi
 
