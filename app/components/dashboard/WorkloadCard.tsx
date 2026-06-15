@@ -112,6 +112,7 @@ export function WorkloadCard({
                 recipe,
                 workload.meta.model,
                 extractServedModelName(workload.meta),
+                workload.meta.port,
               )}
             >
               <Button variant="ghost" size="sm">
@@ -179,12 +180,14 @@ function buildBenchmarkHref(
   recipe: RunningRecipeDisplay | undefined,
   model: string | undefined,
   servedModelName: string | undefined,
+  port: number | undefined,
 ): string {
   const name = recipe?.registeredName ?? recipe?.label;
   const params = new URLSearchParams();
   if (name) params.set("recipe", name);
   if (model) params.set("model", model);
   if (servedModelName) params.set("servedModelName", servedModelName);
+  if (port) params.set("port", String(port));
   params.set("skipRun", "1");
   return `/benchmarks/new?${params.toString()}`;
 }

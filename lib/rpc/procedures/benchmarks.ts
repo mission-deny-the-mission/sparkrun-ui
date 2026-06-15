@@ -80,6 +80,7 @@ export const run = os
       tg: z.array(z.number().int().positive()).optional(),
       depth: z.array(z.number().int().nonnegative()).optional(),
       servedModelName: z.string().optional(),
+      port: z.number().int().min(1).max(65535).optional(),
     }),
   )
   .output(z.object({ id: z.string() }))
@@ -108,6 +109,12 @@ export const run = os
       // can rename the served model via --served-model-name, which makes the
       // recipe's `model:` field (the HF id) a 404 against the live endpoint.
       args.push("-b", `served_model_name=${input.servedModelName}`);
+    }
+    if (input.port) {
+      // The benchmark client targets recipe.port by default. When the running
+      // workload was launched with a port override, the recipe's port is wrong
+      // and llama-benchy gets connection refused. Pass the actual port through.
+      args.push("--port", String(input.port));
     }
     // Always start fresh: sparkrun otherwise prompts "Resume? [Y/n]" when
     // it finds incomplete state from a prior failed run, which hangs the

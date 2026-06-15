@@ -30,6 +30,10 @@ services:
       - NODE_ENV=production
       - PORT=5678
       - HOST_USER=${USER}
+      # Forward the host's HF_TOKEN so sparkrun's HF Hub calls (VRAM
+      # estimation, model metadata) and any benchmark client that hits the
+      # Hub are authenticated. No-op when unset on the host.
+      - HF_TOKEN=${HF_TOKEN:-}
 
     volumes:
       # --- bind-mounted sparkrun from the host ---
@@ -58,3 +62,7 @@ services:
       # sparkrun cache (registries, jobs, benchmarks) — bind-mount so results
       # survive container restarts AND so the host CLI and the UI share state.
       - ${HOME}/.cache/sparkrun:/home/app/.cache/sparkrun
+      # Share the host's huggingface auth + download cache so the container
+      # inherits `huggingface-cli login` and doesn't re-download model
+      # metadata for every benchmark.
+      - ${HOME}/.cache/huggingface:/home/app/.cache/huggingface

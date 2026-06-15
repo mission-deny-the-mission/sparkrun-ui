@@ -58,6 +58,7 @@ function buildCommandPreview({
   tgList,
   depthList,
   servedModelName,
+  port,
 }: {
   recipe: string | null;
   cluster: string;
@@ -68,6 +69,7 @@ function buildCommandPreview({
   tgList: number[];
   depthList: number[];
   servedModelName: string | null;
+  port: number | null;
 }): string {
   if (!recipe) return "";
   const args = ["sparkrun", "benchmark", "run", recipe];
@@ -79,6 +81,7 @@ function buildCommandPreview({
   if (tgList.length) args.push("-b", `tg=${tgList.join(",")}`);
   if (depthList.length) args.push("-b", `depth=${depthList.join(",")}`);
   if (servedModelName) args.push("-b", `served_model_name=${servedModelName}`);
+  if (port) args.push("--port", String(port));
   args.push("--fresh");
   return args.join(" ");
 }
@@ -138,6 +141,12 @@ export function NewBenchmarkForm({
   const clusterParam = searchParams.get("cluster");
   const skipRunParam = searchParams.get("skipRun");
   const servedModelNameParam = searchParams.get("servedModelName");
+  const portParam = (() => {
+    const raw = searchParams.get("port");
+    if (!raw) return null;
+    const n = parseInt(raw, 10);
+    return Number.isFinite(n) && n > 0 && n <= 65535 ? n : null;
+  })();
   const skipRunLocked = skipRunParam === "1" || skipRunParam === "true";
   const initialRecipe =
     matchRecipeParam(recipeParam, modelParam, recipes, running) ?? firstRunning(recipes, running);
@@ -222,6 +231,7 @@ export function NewBenchmarkForm({
     tgList,
     depthList,
     servedModelName: servedModelNameParam,
+    port: portParam,
   });
 
   const recipeOptions = recipes.map((r) => ({
@@ -258,6 +268,7 @@ export function NewBenchmarkForm({
         depth: depthList.length ? depthList : undefined,
         skipRun,
         servedModelName: servedModelNameParam || undefined,
+        port: portParam ?? undefined,
       });
       toast.success("Benchmark started", `${recipe} on ${cluster || "default"}`);
       router.push(`/benchmarks/${id}`);
