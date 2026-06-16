@@ -82,6 +82,10 @@ COPY --chown=app:app --from=builder /app/.next/standalone ./
 COPY --chown=app:app --from=builder /app/.next/static ./.next/static
 COPY --chown=app:app --from=builder /app/public ./public
 
+# WORKDIR creates the directory as root; re-own so the `app` user can write
+# benchmark results and other runtime artifacts to the working directory.
+RUN chown app:app /home/app/app
+
 COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
