@@ -37,10 +37,14 @@ export const health = os
     if (!w) {
       return { ready: false, state: "not_found", reason: "Workload no longer running." };
     }
-    if (!w.host || !w.meta.port) {
+    const hosts = Array.isArray(w.meta.hosts) && w.meta.hosts.length ? w.meta.hosts : [w.host].filter(Boolean);
+    if (!hosts.length || !w.meta.port) {
       return { ready: false, state: "starting", reason: "Container has no host:port yet." };
     }
-    return probeReady(w.host, w.meta.port, signal);
+    // For grouped (multi-node) workloads meta.hosts lists every rank; probe
+    // the head (rank 0) which owns the API server. w.host may be a
+    // comma-joined display string, never a valid URL host.
+    return probeReady(hosts[0], w.meta.port, signal);
   });
 
 async function probeReady(host: string, port: number, signal?: AbortSignal): Promise<Health> {
