@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { AlertTriangle, Rocket } from "lucide-react";
 import { rpc } from "@/lib/rpc/client";
-import type { ClusterStatus } from "@/lib/schemas";
+import { collectWorkloads, type ClusterStatus } from "@/lib/schemas";
 import type { RunningRecipeDisplay } from "@/lib/runningRecipes";
 import { Card, CardBody } from "@/app/components/ui/Card";
 import { Badge } from "@/app/components/ui/Badge";
@@ -95,7 +95,7 @@ export function DashboardLive({
 
       <div className="flex flex-col gap-3">
         <h2 className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Workloads</h2>
-        {status.solo_entries.length === 0 ? (
+        {collectWorkloads(status).length === 0 ? (
           <Card>
             <CardBody className="flex flex-col items-center gap-4 py-12 text-center">
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-sky-50 text-sky-600 dark:bg-sky-950 dark:text-sky-400">
@@ -119,7 +119,7 @@ export function DashboardLive({
           </Card>
         ) : (
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-            {status.solo_entries.map((w) => (
+            {collectWorkloads(status).map((w) => (
               <WorkloadCard
                 key={w.cluster_id}
                 workload={w}

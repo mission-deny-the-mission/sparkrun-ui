@@ -1,4 +1,5 @@
 import { serverClient } from "@/lib/rpc/server";
+import { collectWorkloads } from "@/lib/schemas";
 import { collectRunningRecipeNames } from "@/lib/runningRecipes";
 import { NewBenchmarkForm } from "@/app/components/benchmarks/NewBenchmarkForm";
 
@@ -13,7 +14,7 @@ export default async function NewBenchmarkPage() {
     serverClient.status.get().catch(() => null),
   ]);
   const runningRecipes = status
-    ? await collectRunningRecipeNames(status.solo_entries, recipes)
+    ? await collectRunningRecipeNames(collectWorkloads(status), recipes)
     : [];
   return (
     <div className="flex flex-col gap-6">

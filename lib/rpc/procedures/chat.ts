@@ -2,7 +2,7 @@ import { os, eventIterator } from "@orpc/server";
 import { ORPCError } from "@orpc/server";
 import { z } from "zod";
 import { runSparkrunJson } from "@/lib/sparkrun";
-import { ClusterStatusSchema } from "@/lib/schemas";
+import { ClusterStatusSchema, findWorkload } from "@/lib/schemas";
 
 const ChatMessageSchema = z.object({
   role: z.enum(["system", "user", "assistant"]),
@@ -25,7 +25,7 @@ export const stream = os
     const status = ClusterStatusSchema.parse(
       await runSparkrunJson(["cluster", "status", "--json"]),
     );
-    const workload = status.solo_entries.find((w) => w.cluster_id === clusterId);
+    const workload = findWorkload(status, clusterId);
     if (!workload) {
       throw new ORPCError("NOT_FOUND", {
         message: `Workload "${clusterId}" not found — it may have been stopped.`,

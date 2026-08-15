@@ -3,9 +3,11 @@ import { os, ORPCError } from "@orpc/server";
 import { z } from "zod";
 import { parseDocument } from "yaml";
 import {
+  ClusterStatusSchema,
   RecipeListSchema,
   RecipeValidateResultSchema,
   ValidationIssueSchema,
+  collectWorkloads,
   type RecipeListItem,
   type ValidationIssue,
 } from "@/lib/schemas";
@@ -227,14 +229,9 @@ export const validate = os
     const hosts = await resolveTargetHosts(input.hosts, input.cluster);
 
     if (port && hosts.length) {
-      const status = await runSparkrunJson<{
-        solo_entries?: {
-          cluster_id: string;
-          host?: string;
-          meta?: { port?: number; recipe?: string };
-        }[];
-      }>(["cluster", "status", "--json"]);
-      const running = status.solo_entries ?? [];
+      const raw = await runSparkrunJson(["cluster", "status", "--json"]);
+      const status = ClusterStatusSchema.parse(raw);
+      const running = collectWorkloads(status);
       for (const w of running) {
         if (w.meta?.port === port && w.host && hosts.includes(w.host)) {
           issues.push({

@@ -29,6 +29,29 @@ const TickSchema = z.object({
   hosts: z.record(z.string(), HostMetricsSchema),
 });
 
+/**
+ * sparkrun 0.3.x streams monitor ticks with `hosts` as an ARRAY of
+ * { host, error, sample, workloads, used_slots, free_slots }. The UI
+ * consumers (AggregateStats, MonitorLive) expect the older record shape
+ * hostname -> metrics. Normalize so both views work against either shape.
+ */
+function normalizeMonitorTick(raw: unknown): unknown {
+  const obj = (raw ?? {}) as Record<string, unknown>;
+  const hosts = obj.hosts;
+  if (!Array.isArray(hosts)) return obj;
+  const record: Record<string, unknown> = {};
+  for (const entry of hosts as Array<Record<string, unknown>>) {
+    const sample = entry.sample as Record<string, unknown> | undefined;
+    if (!sample) continue;
+    const key =
+      (typeof sample.hostname === "string" && sample.hostname) ||
+      (typeof entry.host === "string" && entry.host) ||
+      `host-${Object.keys(record).length}`;
+    record[key] = sample;
+  }
+  return { ...obj, hosts: record };
+}
+
 export const stream = os
   .input(
     z
@@ -46,6 +69,6 @@ export const stream = os
     else if (input?.hosts?.length) args.push("--hosts", input.hosts.join(","));
     for await (const obj of streamSparkrunNdjson<z.infer<typeof TickSchema>>(args, { signal })) {
       if (signal?.aborted) break;
-      yield obj;
+      yield normalizeMonitorTick(obj) as z.infer<typeof TickSchema>;
     }
   });

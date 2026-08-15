@@ -10,7 +10,12 @@ import { Select } from "@/app/components/ui/Select";
 import { CodeBlock } from "@/app/components/ui/CodeBlock";
 import { toast } from "@/app/components/ui/Toast";
 import { rpc } from "@/lib/rpc/client";
-import type { ClusterEntry, RecipeListItem, ValidationIssue } from "@/lib/schemas";
+import {
+  collectWorkloads,
+  type ClusterEntry,
+  type RecipeListItem,
+  type ValidationIssue,
+} from "@/lib/schemas";
 import { YamlEditor } from "./YamlEditor";
 import { OverridesForm } from "./OverridesForm";
 import { IssueList } from "./IssueList";
@@ -195,7 +200,7 @@ export function LaunchWizard({
         const iter = await rpc.status.stream({ intervalMs: 1500 }, { signal: ac.signal });
         for await (const next of iter) {
           if (cancelled) break;
-          const match = next.solo_entries.find((w) => w.meta.recipe?.includes(draftId));
+          const match = collectWorkloads(next).find((w) => w.meta.recipe?.includes(draftId));
           if (match) {
             setLaunchedClusterId(match.cluster_id);
             break;

@@ -1,4 +1,5 @@
 import { serverClient } from "@/lib/rpc/server";
+import { collectWorkloads } from "@/lib/schemas";
 import { collectRunningRecipeNames } from "@/lib/runningRecipes";
 import { RecipesBrowser } from "@/app/components/recipes/RecipesBrowser";
 
@@ -10,7 +11,7 @@ export default async function RecipesPage() {
     serverClient.status.get().catch(() => null),
   ]);
   const runningRecipes = status
-    ? await collectRunningRecipeNames(status.solo_entries, recipes)
+    ? await collectRunningRecipeNames(collectWorkloads(status), recipes)
     : [];
   return <RecipesBrowser recipes={recipes} runningRecipes={runningRecipes} />;
 }

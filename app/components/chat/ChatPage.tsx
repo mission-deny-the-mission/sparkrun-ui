@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowUp, Bot, Loader2, MessageSquarePlus, Sparkles, Square } from "lucide-react";
 import { rpc } from "@/lib/rpc/client";
-import type { ClusterStatus } from "@/lib/schemas";
+import { collectWorkloads, type ClusterStatus } from "@/lib/schemas";
 import { Select } from "@/app/components/ui/Select";
 import { Button } from "@/app/components/ui/Button";
 import { useWorkloadHealth } from "@/app/components/useWorkloadHealth";
@@ -30,14 +30,14 @@ export function ChatPage({
 
   const instances = useMemo(
     () =>
-      status.solo_entries
+      collectWorkloads(status)
         .filter((w) => w.host && w.meta.port)
         .map((w) => ({
           value: w.cluster_id,
           label: w.meta.model ?? w.cluster_id,
           description: w.cluster_id,
         })),
-    [status.solo_entries],
+    [status],
   );
 
   const hasInstances = instances.length > 0;

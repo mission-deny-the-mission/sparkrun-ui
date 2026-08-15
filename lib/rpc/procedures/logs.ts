@@ -2,7 +2,7 @@ import { os, eventIterator } from "@orpc/server";
 import { z } from "zod";
 import { runSparkrunJson, streamSparkrunLines } from "@/lib/sparkrun";
 import type { ClusterStatus } from "@/lib/schemas";
-import { ClusterStatusSchema } from "@/lib/schemas";
+import { ClusterStatusSchema, findWorkload } from "@/lib/schemas";
 
 const ARGS_INPUT = z.object({
   clusterId: z.string().regex(/^[a-zA-Z0-9_]+$/),
@@ -18,7 +18,7 @@ const LogEventSchema = z.object({
 async function resolveHostsForCluster(clusterId: string): Promise<string[]> {
   const raw = await runSparkrunJson<unknown>(["cluster", "status", "--json"]);
   const status: ClusterStatus = ClusterStatusSchema.parse(raw);
-  const w = status.solo_entries.find((e) => e.cluster_id === clusterId);
+  const w = findWorkload(status, clusterId);
   if (!w) return [];
   if (w.meta.hosts?.length) return w.meta.hosts;
   if (w.host) return [w.host];

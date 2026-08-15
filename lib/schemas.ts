@@ -51,6 +51,51 @@ export const ClusterStatusSchema = z.object({
 });
 export type ClusterStatus = z.infer<typeof ClusterStatusSchema>;
 
+/**
+ * Map sparkrun's status JSON into the workload list the UI renders.
+ *
+ * sparkrun reports multi-node clusters under `groups` (cluster_id ->
+ * { meta, containers }) while `solo_entries` only carries non-grouped
+ * containers. The dashboard and every workload lookup used to read
+ * `solo_entries` alone, so 2-node runs were invisible. Merge both.
+ */
+export function collectWorkloads(status: ClusterStatus): Workload[] {
+  const grouped: Workload[] = Object.entries(status.groups).map(([clusterId, raw]) => {
+    const group = (raw ?? {}) as {
+      meta?: Record<string, unknown>;
+      containers?: Array<{
+        host?: string;
+        role?: string;
+        status?: string;
+        image?: string;
+      }>;
+    };
+    const containers = group.containers ?? [];
+    const meta = (group.meta ?? {}) as Record<string, unknown>;
+    return {
+      cluster_id: clusterId,
+      meta: { ...meta, cluster_id: clusterId } as Workload["meta"],
+      host:
+        containers
+          .map((c) => c.host)
+          .filter(Boolean)
+          .join(", ") || undefined,
+      status: containers[0]?.status,
+      image: containers[0]?.image,
+      label:
+        containers
+          .map((c) => c.role)
+          .filter(Boolean)
+          .join(", ") || undefined,
+    };
+  });
+  return [...grouped, ...status.solo_entries];
+}
+
+export function findWorkload(status: ClusterStatus, clusterId: string): Workload | undefined {
+  return collectWorkloads(status).find((w) => w.cluster_id === clusterId);
+}
+
 export const RecipeValidateResultSchema = z.object({
   recipe: z.string().optional(),
   valid: z.boolean(),

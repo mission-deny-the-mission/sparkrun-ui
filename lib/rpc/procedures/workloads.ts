@@ -1,7 +1,7 @@
 import { os, ORPCError } from "@orpc/server";
 import { z } from "zod";
 import { runSparkrun, runSparkrunJson } from "@/lib/sparkrun";
-import { ClusterStatusSchema } from "@/lib/schemas";
+import { ClusterStatusSchema, findWorkload } from "@/lib/schemas";
 
 export const stop = os
   .input(z.object({ clusterId: z.string().min(1) }))
@@ -33,7 +33,7 @@ export const health = os
     const status = ClusterStatusSchema.parse(
       await runSparkrunJson(["cluster", "status", "--json"]),
     );
-    const w = status.solo_entries.find((e) => e.cluster_id === input.clusterId);
+    const w = findWorkload(status, input.clusterId);
     if (!w) {
       return { ready: false, state: "not_found", reason: "Workload no longer running." };
     }
